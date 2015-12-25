@@ -5,46 +5,63 @@
 #include "letsort.h"
 
 #define MAXWORDLEN 100
+#define DICTIONARY "anag.txt"
 
 int checkword(char *word);
+int find(char *word);
 
 int main()
 {
     char word[MAXWORDLEN + 1];
-    char temp[MAXWORDLEN + 1];
-    char wordcpy[MAXWORDLEN + 1];
     char format[10];
-    int len, i, found = 0;
+    int len, found = 0;
+
+    /* Make a format string based on MAXWORDLEN. */
+    sprintf(format, "%%%ds", MAXWORDLEN);
+    printf("*** Anagram Solver ***\n\n");
+
+    while (1) {
+        /* Get user's word. */
+        printf("Enter your word (or use 'q' to quit): ");
+        scanf(format, word);
+        if (!strcmp(word, "q"))
+                break;
+
+        /* Change the word to lower case & check for invalid characters. */
+        len = checkword(word);
+        if (len == -1){
+            printf("Invalid word.\n");
+            continue;
+        }
+
+        /* Find and display anagrams. */ 
+        found = find(word);
+
+        if (!found)
+            printf("No matches found.\n"); 
+    }
+    return 0;
+}
+
+/* Look for anagrams. Return number of matches found. */
+int find(char *word)
+{
+    char wordcpy[MAXWORDLEN + 1];
+    char temp[MAXWORDLEN + 1];
+    char format[10];
+    int i, found = 0;
 
     /* Variables for getline. */
     FILE *f;
     char *buf = NULL;
     size_t m = 0;
 
-    /* Make a format string based on MAXWORDLEN. */
-    sprintf(format, "%%%ds", MAXWORDLEN);
-    printf("*** Anagram Solver ***\n\n");
-
-    /* Get user's word. */
-    printf("Enter your word: ");
-    scanf(format, word);
-
-    /* 
-     * Change the word to lower case.
-     * Check there are no invalid characters.
-     */
-    len = checkword(word);
-    if (len == -1){
-        printf("Invalid word.\n");
-        exit(1);
-    }
-
     /* Make a copy of the user's word and then sort the letters.*/
     strcpy(wordcpy, word);
     sortletters(word);
 
     /* Read through the file, looking for matches. */
-    f = fopen("anag.txt", "r");
+    f = fopen(DICTIONARY, "r");
     while ((i = getline(&buf, &m, f)) != -1){
 
         /* Remove newline. */
@@ -54,7 +71,7 @@ int main()
         i /= 2;
         if (i < 1)
             break;
-        
+
         /* Check if sorted letters match user's letters. */
         if (!strcmp(word, &buf[i])){
             /* Make a new format string. */
@@ -68,13 +85,12 @@ int main()
             }
         }
     }
-    if (!found)
-        printf("No matches found.\n"); 
-    
     fclose(f);
     free(buf);
-    return 0;
+    return found;
 }
+
+
 
 /* Return length of word, or -1 on failure. */
 int checkword(char *w)
