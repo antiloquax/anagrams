@@ -5,16 +5,19 @@
 #include "letsort.h"
 
 #define MAXWORDLEN 100
-#define DICTIONARY "anag.txt"
+#define DICTIONARY "dictionary.txt"
+#define ANAGRAMS "anag.txt"
 
 int checkword(char *word);
 int find(char *word);
+int match(char *word);
+int ismatch(char *pat, char *str);
 
 int main()
 {
     char word[MAXWORDLEN + 1];
     char format[10];
-    int len, found = 0;
+    int found;
 
     /* Make a format string based on MAXWORDLEN. */
     sprintf(format, "%%%ds", MAXWORDLEN);
@@ -27,16 +30,31 @@ int main()
         if (!strcmp(word, "q"))
                 break;
 
-        /* Change the word to lower case & check for invalid characters. */
-        len = checkword(word);
-        if (len == -1){
-            printf("Invalid word.\n");
-            continue;
+        /* Reset counter. */ 
+        found = 0;
+        
+        /* 
+         * Change the word to lower case & check for invalid characters. 
+         * Return value of checkword() tells us what to do next.
+         */
+        switch (checkword(word)) {
+            /* -1 means we do nothing. */
+            case -1:
+                printf("Invalid word.\n");
+                found = -1;
+                break;
+            /* Zero means we look for an anagram. */
+            case 0:
+                found = find(word);
+                break;
+            /* One means look for word with missing letters. */
+            case 1:
+                found = match(word);
+                break;
+            default:
+                /* Shouldn't ever get here. */
+                break;
         }
-
-        /* Find and display anagrams. */ 
-        found = find(word);
-
         if (!found)
             printf("No matches found.\n"); 
     }
@@ -61,7 +79,7 @@ int find(char *word)
     sortletters(word);
 
     /* Read through the file, looking for matches. */
-    f = fopen(DICTIONARY, "r");
+    f = fopen(ANAGRAMS, "r");
     while ((i = getline(&buf, &m, f)) != -1){
 
         /* Remove newline. */
@@ -90,21 +108,66 @@ int find(char *word)
     return found;
 }
 
+int match(char *word)
+{
+    int i, found = 0; 
+    int len = strlen(word);
+    
+    FILE *f;
+    char *buf = NULL;
+    size_t m = 0;
 
+    f = fopen(DICTIONARY, "r");
+    while ((i = getline(&buf, &m, f)) != -1){
+        /* Remove newline. */
+        buf[--i] = '\0';
+        if (len != i)
+            continue;
+        
+        /* Check this word against the pattern. */
+        if (ismatch(word, buf)){
+            found++;
+            printf("%s\n", buf);
+        }
+    }
 
-/* Return length of word, or -1 on failure. */
+    fclose(f);
+    free(buf);
+    return found;
+}
+
+/* Check the pattern against the string. */
+int ismatch(char *pat, char *str)
+{
+    while(*pat){
+        if (*pat != *str && *pat != '.')
+            return 0;
+        *pat++;
+        *str++;
+    }
+
+    return 1;
+}
+
+/* 
+ * Change the string to lower case.
+ * Return 0 if only letters found.
+ * Ruturn 1 if '.' found.
+ */
 int checkword(char *w)
 {
-    char *p, c;
-    p = w;
-    while (*p)
+    int dot = 0;
+    char c;
+    while (*w)
     {
-        c = tolower(*p);
-        if (c < 'a' || c > 'z')
+        c = tolower(*w);
+        if (c == '.')
+            dot = 1;
+        else if (c < 'a' || c > 'z')
             return -1;
-        *p = c;
-        p++;
+        *w = c;
+        w++;
     }
-    return p-w;
+    return dot;
 }
 
