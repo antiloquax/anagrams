@@ -23,6 +23,9 @@ int main()
     sprintf(format, "%%%ds", MAXWORDLEN);
     printf("*** Anagram Solver ***\n\n");
 
+    printf("To find a word with missing letters instead,\n");
+    printf("use a . to stand for the unknown letter(s).\n");
+
     while (1) {
         /* Get user's word. */
         printf("Enter your word (or use 'q' to quit): ");
